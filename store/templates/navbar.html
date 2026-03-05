@@ -1,0 +1,87 @@
+{% load static %}
+
+<!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="{% url 'home' %}"><img src="{% static './assets/image/muse of scent.JPG' %}" height="30px" alt=""> Muse Of Scent</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                        <li class="nav-item"><a class="nav-link active" aria-current="page" href="{% url 'home' %}">Home</a></li>
+
+                        <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+
+                        {% if user.is_authenticated %}
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Profile</a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'update_user' %}">User Profile</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="{% url 'update_info' %}">User info</a></li>
+                                </ul>
+                            </li>
+
+                            {% if user.is_superuser %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Orders</a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" href="{% url 'shipped_dash' %}">Shipped Orders</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="{% url 'not_shipped_dash' %}">UnShipped Orders</a></li>
+                                </ul>
+                            </li>
+                            {% endif %}
+
+
+                            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+
+                            <li class="nav-item"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
+
+                        {% endif %}
+                        
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Categories</a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="{% url 'category_summary' %}">All Products</a></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><a class="dropdown-item" href="{% url 'category' 'Unisex' %}">Unisex</a></li>
+                                <li><a class="dropdown-item" href="{% url 'category' 'For-Women' %}">For Women</a></li>
+                                <li><a class="dropdown-item" href="{% url 'category' 'For-Men' %}">For Men</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <form method="POST" action="{% url 'search' %}" class="position-relative ms-3">
+                        {% csrf_token %}
+                        <input
+                            class="form-control ps-4 pe-5 rounded-pill"
+                            type="search"
+                            name="searched"
+                            placeholder="Search perfumes..."
+                            aria-label="Search"
+                            required
+                        >
+                        <button
+                            type="submit"
+                            class="btn position-absolute top-50 end-0 translate-middle-y me-2 p-0 border-0 bg-transparent"
+                            aria-label="Submit search"
+                        >
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </form>
+
+                    <br>
+                    <form class="d-flex ms-3">
+                        <a href="{% url 'cart_summary' %}" class="btn btn-outline-dark">
+                            <i class="bi-cart-fill me-1"></i>
+                            Cart
+                            <span class="badge bg-dark text-white ms-1 rounded-pill" id="cart_quantity">{{ cart|length }}</span>
+                        </a>
+                        
+                    </form>
+                </div>
+            </div>
+        </nav>

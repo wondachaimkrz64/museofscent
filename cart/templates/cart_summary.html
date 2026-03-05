@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+
+        <!-- Header-->
+        <header class="bg-dark py-5 gradient-background">
+            <div class="container px-4 px-lg-5 my-5">
+                <div class="text-center text-white">
+                    <h1 class="display-4 fw-bolder">Shopping Cart</h1>
+                    <p class="lead fw-normal text-white-100 mb-0">Personalized Cart...</p>
+                </div>
+            </div>
+        </header>
+        <br>
+        <div class="container">
+        {% if cart_products %}
+
+            {% for product in cart_products %}
+            <div id="cart-row-{{ product.id }}" class="mb-4">
+
+            <div class="row align-items-stretch g-5">
+
+            <!-- Product Image -->
+            <div class="col-md-5 d-flex" style="max-height: 380px; min-height: 200px;">
+              <img 
+                src="{{ product.image.url }}"
+                alt="{{ product.name }}"
+                class="img-fluid rounded-4 shadow-sm w-100"
+                style="height: 100%; object-fit: cover;"
+              >
+            </div>
+
+            <!-- Product Details -->
+            <div class="col-md-7 d-flex flex-column justify-content-center">
+
+
+              <h1 class="fw-bold mb-3">{{ product.name }}</h1>
+
+              <p class="text-muted mb-2">
+                {{ product.category }}
+              </p>
+
+              <!-- Price -->
+              {% if product.is_sale %}
+                <!-- Rating -->
+                <div class="text-warning mb-3">
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star text-muted"></i>
+                    <i class="bi bi-star text-muted"></i>
+                </div>
+
+                <div class="mb-3">
+                  <span class="text-muted text-decoration-line-through me-2">
+                    ₦{{ product.price }}
+                  </span>
+                  <span class="fs-4 fw-bold text-danger">
+                    ₦{{ product.sales_price }}
+                  </span>
+                </div>
+      {% else %}
+      <!-- Rating -->
+      <div class="text-warning mb-3">
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star text-muted"></i>
+      </div>
+
+        <div class="mb-3 fs-4 fw-bold">
+          ₦{{ product.price }}
+        </div>
+      {% endif %}
+
+       <div class="row justify-content-start">
+        <div class="col-md-2">Quantity:</div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" id="select{{product.id}}">
+                     
+              {% for key, value in quantities.items %}
+                {% if key == product.id|slugify %}
+                  <option selected>{{ value }}</option>
+                {% endif %}
+              {% endfor %}
+            
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </div>
+      </div>
+      
+      <br>
+      <!-- Actions -->
+      <div class="d-flex gap-3">
+
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary px-4">
+          Back to Home
+        </a>
+        <button type="button" data-index="{{product.id}}" class="btn btn-secondary update-cart">Update</button>
+        <button type="button" data-index="{{product.id}}" class="btn btn-danger delete-cart">Remove</button>
+      </div>
+
+    </div>
+
+  </div>
+  </div>
+  <br>
+
+            {% endfor %}
+            <div align="right">
+              <h3>Total: ₦<span id="cart-total">{{ totals }}</span></h3>
+              <a href="{% url 'checkout' %}" class="btn btn-secondary">Checkout</a>
+              
+            </div>
+            
+
+            {% else %}
+            There's Nothing In Your Cart List... 
+
+            <br>  <br> <br> <br> <br> <br> <br><br>  <br> <br> <br> <br> <br> <br>
+        {% endif %}
+        </div>
+       
+       <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> 
+
+
+
+
+
+
+
+<script>
+// Update Cart
+  $(document).on('click', '.update-cart', function(e){
+      e.preventDefault();
+      // Grab a product id
+      var productid = $(this).data('index');
+
+      $.ajax({
+          type: 'POST',
+          url: '{% url 'cart_update' %}',
+          data: {
+            product_id: $(this).data('index'),
+            product_qty: $('#select' + productid).val(),
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            action: 'post'
+          },
+
+          success: function(json){
+            //console.log(json)
+            //document.getElementById("cart_quantity").textContent = json.qty
+            // location.reload();
+
+            // Update total
+            $('#cart-total').text(json.total);
+            // Show Bootstrap success alert
+            showBootstrapAlert("Cart item updated successfully!");
+
+          },
+
+          error: function(xhr, errmsg, err){
+            showBootstrapAlert("Something went wrong. Try again.", "danger");
+          }
+
+      });
+
+
+  });
+
+
+  // Delete Item From Cart
+  $(document).on('click', '.delete-cart', function(e){
+    e.preventDefault();
+
+    const productid = $(this).data('index');
+    const row = $('#cart-row-' + productid); // wrap each cart item with this ID
+
+    $.ajax({
+        type: 'POST',
+        url: "{% url 'cart_delete' %}",
+        data: {
+            product_id: productid,
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            action: 'post'
+        },
+
+        success: function(json){
+            // Remove item from UI smoothly
+            row.fadeOut(300, function(){
+                $(this).remove();
+
+                // Update total
+                $('#cart-total').text(json.total);
+
+                // If cart is empty
+                //if ($('[id^="cart-row-"]').length === 0) {
+                //    $('.container').html("<h4>Your cart is empty.</h4>");
+                //}
+            });
+
+            showBootstrapAlert("Cart item deleted successfully!");
+        },
+
+        error: function(){
+            showBootstrapAlert("Something went wrong. Try again.", "danger");
+        }
+    });
+  
+  });
+
+
+</script>
+
+{% endblock %}

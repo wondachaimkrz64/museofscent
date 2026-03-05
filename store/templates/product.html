@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+ <div class="container my-5">
+
+  <div class="row align-items-center g-5">
+
+    <!-- Product Image -->
+    <div class="col-md-5 d-flex" style="max-height: 380px; min-height: 200px;">
+      <img 
+        src="{{ product.image.url }}"
+        alt="{{ product.name }}"
+        class="img-fluid rounded-4 shadow-sm"
+        style="object-fit: cover;"
+      >
+    </div>
+
+    <!-- Product Details -->
+    <div class="col-md-7 d-flex flex-column justify-content-center">
+
+      <h1 class="fw-bold mb-3">{{ product.name }}</h1>
+
+      <p class="text-muted mb-2">
+        {{ product.category }}
+      </p>
+
+      <!-- Price -->
+      {% if product.is_sale %}
+        <!-- Rating -->
+        <div class="text-warning mb-3">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star text-muted"></i>
+            <i class="bi bi-star text-muted"></i>
+        </div>
+
+        <div class="mb-3">
+          <span class="text-muted text-decoration-line-through me-2">
+            ₦{{ product.price }}
+          </span>
+          <span class="fs-4 fw-bold text-danger">
+            ₦{{ product.sales_price }}
+          </span>
+        </div>
+      {% else %}
+      <!-- Rating -->
+      <div class="text-warning mb-3">
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-star text-muted"></i>
+      </div>
+
+        <div class="mb-3 fs-4 fw-bold">
+          ₦{{ product.price }}
+        </div>
+      {% endif %}
+
+      <!-- Description -->
+      <p class="text-muted mb-4">
+        {{ product.description }}
+      </p>
+
+      <div class="row justify-content-start">
+        <div class="col-md-2">Quantity:</div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" id="qty-cart">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </div>
+      </div>
+      
+      <br>
+      <br>
+
+      <!-- Actions -->
+      <div class="d-flex gap-3">
+        <button
+          type="button"
+          value="{{ product.id }}"
+          class="btn btn-danger px-4"
+          id="add-cart"
+        >
+          Add to Cart
+
+
+        </button>
+
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary px-4">
+          Back to Home
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+ </div>
+
+
+    
+
+ <br>
+<br><br>
+<br><br>
+<br><br>
+<br><br>
+<br><br>
+<br><br>
+<br><br>
+<br><br>
+<br>
+<br><br>
+<br><br>
+<br>
+
+<script>
+$(document).on('click', '#add-cart', function(e){
+    e.preventDefault();
+
+    $.ajax({
+        type: 'POST',
+        url: "{% url 'cart_add' %}",
+        data: {
+            product_id: $('#add-cart').val(),
+            product_qty: $('#qty-cart').val(),
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            action: 'post'
+        },
+
+        success: function(json){
+            // Update cart quantity in navbar
+            document.getElementById("cart_quantity").textContent = json.qty;
+
+            // Show Bootstrap success alert
+            showBootstrapAlert("Added to cart successfully!");
+        },
+
+        error: function(xhr, errmsg, err){
+            showBootstrapAlert("Something went wrong. Try again.", "danger");
+        }
+    });
+});
+</script>
+
+
+{% endblock %}
