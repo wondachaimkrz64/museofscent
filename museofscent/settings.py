@@ -19,7 +19,7 @@ SECRET_KEY = 'django-insecure-hk7o(tf(oxn5_^urlhpg4%xi-c17=m4#rpznz-*c!s05k)g_m7
 DEBUG = True
 
 ALLOWED_HOSTS = ['museofscent-production.up.railway.app', 'https://museofscent-production.up.railway.app']
-CSRF_TRUSTED_ORIGINS = ['museofscent-production.up.railway.app', 'https://museofscent-production.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://museofscent-production.up.railway.app']
 
 
 # Application definition
