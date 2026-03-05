@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,8 +19,8 @@ SECRET_KEY = 'django-insecure-hk7o(tf(oxn5_^urlhpg4%xi-c17=m4#rpznz-*c!s05k)g_m7
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['museofscent-production.up.railway.app', 'https://museofscent-production.up.railway.app']
-CSRF_TRUSTED_ORIGINS = ['https://museofscent-production.up.railway.app']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'museofscent-production.up.railway.app', 'https://museofscent-production.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://museofscent-production.up.railway.app', 'http://localhost:8000']
 
 
 # Application definition
@@ -72,18 +73,28 @@ WSGI_APPLICATION = 'museofscent.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': BASE_DIR / 'db.sqlite3',
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'railway',
-        'USER': 'postgres',
-        'PASSWORD': os.environ['DB_PASSWORD_YO'],
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+DATABASE_URL = os.environ.get('DATABASE_URL')  # Railway provides this automatically
+
+if DATABASE_URL:
+    # Use Railway DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+
+else:
+    DATABASES = {
+        'default': {
+            #'ENGINE': 'django.db.backends.sqlite3',
+            #'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'railway',
+            'USER': 'postgres',
+            'PASSWORD': os.environ['DB_PASSWORD_YO'],  # your original line
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
+
 
 
 
