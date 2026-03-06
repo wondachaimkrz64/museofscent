@@ -6,25 +6,28 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# load our env variables
+# Load environment variables from .env
 load_dotenv()
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hk7o(tf(oxn5_^urlhpg4%xi-c17=m4#rpznz-*c!s05k)g_m7'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'museofscent-production.up.railway.app', 'https://museofscent-production.up.railway.app']
-CSRF_TRUSTED_ORIGINS = ['https://museofscent-production.up.railway.app', 'http://localhost:8000']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'museofscent-production.up.railway.app',
+    'https://museofscent-production.up.railway.app'
+]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://museofscent-production.up.railway.app',
+    'http://localhost:8000'
+]
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -69,94 +72,50 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'museofscent.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-DATABASE_URL = os.environ.get('DATABASE_URL')  # Railway provides this automatically
+# Database configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')  # Railway will provide this automatically
 
 if DATABASE_URL:
-    # Use Railway DATABASE_URL
+    # Use Railway's database in production
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-
 else:
+    # Local development fallback
     DATABASES = {
         'default': {
-            #'ENGINE': 'django.db.backends.sqlite3',
-            #'NAME': BASE_DIR / 'db.sqlite3',
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'railway',
-            'USER': 'postgres',
-            'PASSWORD': os.environ['DB_PASSWORD_YO'],  # your original line
+            'NAME': os.environ.get('DB_NAME', 'railway'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD_YO', ''),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
 
-
-
-
-
 # Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
+# Static files
 STATIC_URL = 'static/'
-STATICFILES_DIRS = ['STATIC/'] 
-
-# whitenoise static stuff
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFileStorage'
+STATICFILES_DIRS = ['static/']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFileStorage'
 
-
+# Media files
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
-
-
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-
-
-
-
-
-
-
-
-
-
