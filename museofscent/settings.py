@@ -19,12 +19,12 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'museofscent-production.up.railway.app',
-    'https://museofscent-production.up.railway.app'
+    #'https://museofscent-production.up.railway.app'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'https://museofscent-production.up.railway.app',
-    'http://localhost:8000'
+    #'http://localhost:8000'
 ]
 
 # Application definition
@@ -73,6 +73,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'museofscent.wsgi.application'
 
 # Database configuration
+
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600
+    )
+}
+
+
+
+"""
 DATABASE_URL = os.environ.get('DATABASE_URL')  # Railway will provide this automatically
 
 if DATABASE_URL:
@@ -92,6 +103,8 @@ else:
             'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
+"""
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
