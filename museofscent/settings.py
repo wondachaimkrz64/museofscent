@@ -16,6 +16,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-for-dev')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [
+    'https://museofscent.com',
     'localhost',
     '127.0.0.1',
     'museofscent-production.up.railway.app',
@@ -23,6 +24,7 @@ ALLOWED_HOSTS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://museofscent.com',
     'https://museofscent-production.up.railway.app',
     #'http://localhost:8000'
 ]
