@@ -17,7 +17,7 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [
     'https://museofscent.com',
-    'museofscent.com'
+    'museofscent.com',
     'localhost',
     '127.0.0.1',
     'museofscent-production.up.railway.app',
