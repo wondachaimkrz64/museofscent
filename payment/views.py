@@ -5,39 +5,35 @@ from payment.models import ShippingAddress, Order, OrderItem
 from django.contrib.auth.models import User
 from store.models import Product, Profile
 import datetime
+import requests
+from django.conf import settings
+from django.utils import timezone
 
 
 # Create your views here.
 def orders(request, pk):
 	if request.user.is_authenticated and request.user.is_superuser:
-		# get the order
-		order = Order.objects.get(id=pk)
-		# get the order items
+		try:
+			order = Order.objects.get(id=pk)
+		except Order.DoesNotExist:
+			return redirect('/?auth=billing_error')
+
 		items = OrderItem.objects.filter(order=pk)
 
 		if request.POST:
 			status = request.POST['shipping_status']
-			# check if true or false
+
 			if status == "true":
-				# get the order
-				order = Order.objects.filter(id=pk)
-				# update the status
 				now = datetime.datetime.now()
-				order.update(shipped=True, date_shipped=now)
-
+				Order.objects.filter(id=pk).update(shipped=True, date_shipped=now)
 			else:
-				# get the order
-				order = Order.objects.filter(id=pk)
-				# update the status
-				order.update(shipped=False)
+				Order.objects.filter(id=pk).update(shipped=False)
+
 			return redirect('/?auth=order_success2')
-
-
 
 		return render(request, 'payment/orders.html', {'order':order, 'items':items})
 
-	else:
-		return redirect('/?auth=billing_error')
+	return redirect('/?auth=billing_error')
 
 
 def shipped_dash(request):
@@ -45,20 +41,13 @@ def shipped_dash(request):
 		orders = Order.objects.filter(shipped=True)
 
 		if request.POST:
-			status = request.POST['shipping_status']
 			num = request.POST['num']
-			# grab the order
-			order = Order.objects.filter(id=num)
-			# grab date & time
-			now = datetime.datetime.now()
-			# update order
-			order.update(shipped=False)
-			# redirect
+			Order.objects.filter(id=num).update(shipped=False)
 			return redirect('/?auth=order_success2')
 
 		return render(request, "payment/shipped_dash.html", {"orders":orders})
-	else:
-		return redirect('/?auth=billing_error') 
+
+	return redirect('/?auth=billing_error') 
 
 
 def not_shipped_dash(request):
@@ -66,182 +55,249 @@ def not_shipped_dash(request):
 		orders = Order.objects.filter(shipped=False)
 
 		if request.POST:
-			status = request.POST['shipping_status']
 			num = request.POST['num']
-			# grab the order
-			order = Order.objects.filter(id=num)
-			# grab date & time
 			now = datetime.datetime.now()
-			# update order
-			order.update(shipped=True, date_shipped=now)
-			# redirect
+			Order.objects.filter(id=num).update(shipped=True, date_shipped=now)
 			return redirect('/?auth=order_success2')
 
 		return render(request, "payment/not_shipped_dash.html", {"orders":orders})
-	else:
-		return redirect('/?auth=billing_error')
+
+	return redirect('/?auth=billing_error')
 
 
 def process_order(request):
 	if request.POST:
-		# Get cart
 		cart = Cart(request)
 		cart_products = cart.get_prods
 		quantities = cart.get_quants
 		totals = cart.cart_total()
 
-		# get billing info
-		payment_form = PaymentForm(request.POST or None)
-		# get shipping session data 
 		my_shipping = request.session.get('my_shipping')
 
-		# Gather Order info 
+		if not my_shipping:
+			return redirect('/?auth=billing_error')
+
 		full_name = my_shipping['shipping_full_name']
 		email = my_shipping['shipping_email']
-		# create shipping Address from session info
+
 		shipping_address = f"{my_shipping['shipping_address1']}\n{my_shipping['shipping_address2']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_country']}"
 		amount_paid = totals
 
-
-		# create an order
 		if request.user.is_authenticated:
-			# logged in
 			user = request.user
-			# Create order 
-			create_order = Order(user=user, full_name=full_name, email=email, shipping_address=shipping_address, amount_paid=amount_paid)
-			create_order.save()
+			create_order = Order.objects.create(
+				user=user,
+				full_name=full_name,
+				email=email,
+				shipping_address=shipping_address,
+				amount_paid=amount_paid
+			)
 
-			# Add order items
-			# Get the order Id
 			order_id = create_order.pk
-			# get product info
-			for product in cart_products():
-				# Get product Id
-				product_id = product.id
-				# Get product price
-				if product.is_sale:
-					price = product.sales_price
-				else:
-					price = product.price
 
-				# get Quantities
+			for product in cart_products():
+				price = product.sales_price if product.is_sale else product.price
+
 				for key, value in quantities().items():
 					if int(key) == product.id:
-						# Create order item
-						create_order_item = OrderItem(order_id=order_id, product_id=product_id, user=user, quantity=value, price=price,)
-						create_order_item.save()
+						OrderItem.objects.create(
+							order_id=order_id,
+							product_id=product.id,
+							user=user,
+							quantity=value,
+							price=price
+						)
 
-			# ✅ Clear cart after checkout
 			for key in list(request.session.keys()):
 				if key == "session_key":
-					# Delete the key
 					del request.session[key]
 
-			# delete cart from db (old_cart field)
-			current_user = Profile.objects.filter(user__id=request.user.id)
-			# delete shopping cart in db (old_cart field)
-			current_user.update(old_cart="")
+			Profile.objects.filter(user__id=request.user.id).update(old_cart="")
 
-
-
-			return redirect('/?auth=order_success')
+			return redirect('initialize_payment', order_id=create_order.id)
 
 		else:
-			# not logged in
-			# Create order 
-			create_order = Order(full_name=full_name, email=email, shipping_address=shipping_address, amount_paid=amount_paid)
-			create_order.save()
+			create_order = Order.objects.create(
+				full_name=full_name,
+				email=email,
+				shipping_address=shipping_address,
+				amount_paid=amount_paid
+			)
 
-			# Add order items
-			# Get the order Id
 			order_id = create_order.pk
-			# get product info
-			for product in cart_products():
-				# Get product Id
-				product_id = product.id
-				# Get product price
-				if product.is_sale:
-					price = product.sales_price
-				else:
-					price = product.price
 
-				# get Quantities
+			for product in cart_products():
+				price = product.sales_price if product.is_sale else product.price
+
 				for key, value in quantities().items():
 					if int(key) == product.id:
-						# Create order item
-						create_order_item = OrderItem(order_id=order_id, product_id=product_id, quantity=value, price=price,)
-						create_order_item.save()
+						OrderItem.objects.create(
+							order_id=order_id,
+							product_id=product.id,
+							quantity=value,
+							price=price
+						)
 
-			# ✅ Clear cart after checkout
 			for key in list(request.session.keys()):
 				if key == "session_key":
-					# Delete the key
 					del request.session[key]
 
-			return redirect('/?auth=order_success')
+			return redirect('initialize_payment', order_id=create_order.id)
+
+	return redirect('/?auth=billing_error')
 
 
-	else:
-		return redirect('/?auth=billing_error')
+def initialize_payment(request, order_id):
+	try:
+		order = Order.objects.get(id=order_id)
+	except Order.DoesNotExist:
+		return redirect('/?auth=payment_failed')
+
+	url = "https://api.paystack.co/transaction/initialize"
+	headers = {
+		"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+		"Content-Type": "application/json",
+	}
+
+	data = {
+		"email": order.email,
+		"amount": int(order.amount_paid * 100),
+		"reference": order.reference,
+		"callback_url": "https://museofscent.com/payment/verify/",
+	}
+
+	try:
+		response = requests.post(url, json=data, headers=headers)
+		res_data = response.json()
+
+		if res_data.get("status"):
+			return redirect(res_data["data"]["authorization_url"])
+	except Exception:
+		pass
+
+	return redirect('/?auth=payment_failed')
+
+
+def verify_payment(request):
+	reference = request.GET.get("reference")
+
+	if not reference:
+		return redirect('/?auth=payment_failed')
+
+	try:
+		order = Order.objects.get(reference=reference)
+	except Order.DoesNotExist:
+		return redirect('/?auth=payment_failed')
+
+	# Prevent double processing
+	if order.paid:
+		return redirect('payment_success')
+
+	url = f"https://api.paystack.co/transaction/verify/{reference}"
+	headers = {
+		"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+	}
+
+	try:
+		response = requests.get(url, headers=headers)
+		res_data = response.json()
+
+		if res_data.get("status"):
+			data = res_data["data"]
+
+			if data["status"] == "success":
+				order.paid = True
+				order.payment_date = timezone.now()
+				order.save()
+
+				return redirect('payment_success')
+	except Exception:
+		pass
+
+	return redirect('/?auth=payment_failed')
+
+
+
+def paystack_webhook(request):
+    secret_key = settings.PAYSTACK_SECRET_KEY
+
+    # Verify Paystack signature
+    hash = hmac.new(
+        secret_key.encode('utf-8'),
+        request.body,
+        hashlib.sha512
+    ).hexdigest()
+
+    paystack_signature = request.headers.get('x-paystack-signature')
+
+    if hash != paystack_signature:
+        return HttpResponse(status=400)
+
+    # Load payload
+    payload = json.loads(request.body)
+
+    # Handle successful payment
+    if payload["event"] == "charge.success":
+        data = payload["data"]
+        reference = data["reference"]
+
+        try:
+            order = Order.objects.get(reference=reference)
+
+            # Prevent double processing
+            if not order.paid:
+                order.paid = True
+                order.payment_date = timezone.now()
+                order.save()
+
+        except Order.DoesNotExist:
+            pass
+
+    return HttpResponse(status=200)
+
+
 
 
 def billing_info(request):
 	if request.POST:
-		# Get cart
 		cart = Cart(request)
 		cart_products = cart.get_prods
 		quantities = cart.get_quants
 		totals = cart.cart_total()
 
-		# create a session with shipping info
-		my_shipping = request.POST
-		request.session['my_shipping'] = my_shipping
+		request.session['my_shipping'] = request.POST
+		billing_form = PaymentForm()
 
-		# check if user is logged in
-		if request.user.is_authenticated:
-			# Get the billing Form
-			billing_form = PaymentForm()
-			return render(request, "payment/billing_info.html", {'cart_products':cart_products, 'quantities':quantities, 'totals':totals, 'shipping_info':request.POST, 'billing_form':billing_form})
+		return render(request, "payment/billing_info.html", {
+			'cart_products':cart_products,
+			'quantities':quantities,
+			'totals':totals,
+			'shipping_info':request.POST,
+			'billing_form':billing_form
+		})
 
-		else:
-			#not logged in
-			# Get the billing Form
-			billing_form = PaymentForm()
-			return render(request, "payment/billing_info.html", {'cart_products':cart_products, 'quantities':quantities, 'totals':totals, 'shipping_info':request.POST, 'billing_form':billing_form})
-
-
-		shipping_form = request.POST
-		return render(request, "payment/billing_info.html", {'cart_products':cart_products, 'quantities':quantities, 'totals':totals, 'shipping_form':shipping_form})
-
-	else:
-		return redirect('/?auth=billing_error')
-
-
+	return redirect('/?auth=billing_error')
 
 
 def checkout(request):
-	# Get the cart  
 	cart = Cart(request)
 	cart_products = cart.get_prods
 	quantities = cart.get_quants
 	totals = cart.cart_total()
 
 	if request.user.is_authenticated:
-		# checkout as logged in user
-		# shipping user
 		shipping_user = ShippingAddress.objects.get(user__id=request.user.id)
-		# shipping form
 		shipping_form = ShippingForm(request.POST or None, instance=shipping_user)
-		return render(request, "payment/checkout.html", {'cart_products':cart_products, 'quantities':quantities, 'totals':totals, 'shipping_form':shipping_form})
-
 	else:
-		# checkout as guest 
 		shipping_form = ShippingForm(request.POST or None)
-		return render(request, "payment/checkout.html", {'cart_products':cart_products, 'quantities':quantities, 'totals':totals, 'shipping_form':shipping_form})
 
-
+	return render(request, "payment/checkout.html", {
+		'cart_products':cart_products,
+		'quantities':quantities,
+		'totals':totals,
+		'shipping_form':shipping_form
+	})
 
 
 def payment_success(request):
-
 	return render(request, "payment/payment_success.html", {})

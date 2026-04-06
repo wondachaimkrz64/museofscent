@@ -9,4 +9,7 @@ urlpatterns = [
 	path('shipped_dash/', views.shipped_dash, name='shipped_dash'),
 	path('not_shipped_dash/', views.not_shipped_dash, name='not_shipped_dash'),
 	path('orders/<int:pk>/', views.orders, name='orders'),
+	path('pay/<int:order_id>/', views.initialize_payment, name='initialize_payment'),
+	path('verify/', views.verify_payment, name='verify_payment'),
+	path('webhook/', views.paystack_webhook, name='paystack_webhook'),
 ]

@@ -4,6 +4,7 @@ from store.models import Product
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 import datetime
+import uuid
 
 # Create your models here.
 class ShippingAddress(models.Model):
@@ -42,8 +43,15 @@ class Order(models.Model):
 	full_name = models.CharField(max_length=255)
 	email = models.EmailField(max_length=255)
 	shipping_address = models.TextField(max_length=15000)
-	amount_paid = models.DecimalField(max_digits=8, decimal_places=2)
+	amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+
+	reference = models.CharField(max_length=200, unique=True, null=True, blank=True)
+
 	date_ordered = models.DateTimeField(auto_now_add=True)
+
+	payment_date = models.DateTimeField(null=True, blank=True)
+
+	paid = models.BooleanField(default=False)
 	shipped = models.BooleanField(default=False)
 	date_shipped = models.DateTimeField(blank=True, null=True)
 
@@ -58,6 +66,13 @@ def set_shipped_date_on_update(sender, instance, **kwargs):
 		obj = sender._default_manager.get(pk=instance.pk)
 		if instance.shipped and not obj.shipped:
 			instance.date_shipped = now
+
+# 🔥 NEW: auto-generate Paystack reference
+@receiver(pre_save, sender=Order)
+def create_reference(sender, instance, **kwargs):
+	if not instance.reference:
+		instance.reference = str(uuid.uuid4())
+
 
 
 
