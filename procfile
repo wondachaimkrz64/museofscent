@@ -1,1 +1,1 @@
-web: python manage.py migrate && gunicorn museofscent.wsgi:application --bind 0.0.0.0:$PORT
+web: gunicorn museofscent.wsgi:application --bind 0.0.0.0:$PORT
