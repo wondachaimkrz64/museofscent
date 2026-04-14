@@ -13,6 +13,7 @@ import hmac
 import hashlib
 import json
 from django.http import HttpResponse
+from django.core.mail import send_mail
 
 
 # Create your views here.
@@ -198,7 +199,7 @@ def verify_payment(request):
 	except Order.DoesNotExist:
 		return redirect('payment_failed')
 
-	# ✅ Prevent duplicate transactions
+	# Prevent duplicate processing
 	if order.paid:
 		return redirect('payment_success')
 
@@ -216,7 +217,6 @@ def verify_payment(request):
 
 		data = res_data.get("data", {})
 
-		# ✅ STRICT validation
 		if (
 			data.get("status") == "success"
 			and data.get("amount") == int(order.amount_paid * 100)
@@ -225,6 +225,9 @@ def verify_payment(request):
 			order.paid = True
 			order.payment_date = timezone.now()
 			order.save()
+
+			# ✅ SEND EMAIL HERE
+			send_order_email(order)
 
 			return redirect('payment_success')
 
@@ -312,6 +315,41 @@ def checkout(request):
 		'totals':totals,
 		'shipping_form':shipping_form
 	})
+
+
+def send_order_email(order):
+	subject = "Your Order Confirmation - MuseOfScent"
+
+	message = f"""
+Hi {order.full_name},
+
+Thank you for your purchase!
+
+Order Details:
+-------------------------
+Order Reference: {order.reference}
+Amount Paid: ₦{order.amount_paid}
+
+Shipping Address:
+{order.shipping_address}
+
+-------------------------
+Your order is being processed and will be shipped soon.
+
+Thank you for shopping with us!
+MuseOfScent
+"""
+
+	send_mail(
+		subject,
+		message,
+		settings.EMAIL_HOST_USER,
+		[order.email],
+		fail_silently=True,
+	)
+
+
+
 
 
 def payment_success(request):
