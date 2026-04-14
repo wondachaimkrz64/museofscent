@@ -88,7 +88,7 @@ def process_order(request):
 		shipping_address = f"{my_shipping['shipping_address1']}\n{my_shipping['shipping_address2']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_country']}"
 		amount_paid = totals
 
-		reference = str(uuid.uuid4())  # ✅ ALWAYS generate reference
+		reference = str(uuid.uuid4())
 
 		if request.user.is_authenticated:
 			user = request.user
@@ -160,7 +160,7 @@ def initialize_payment(request, order_id):
 	try:
 		order = Order.objects.get(id=order_id)
 	except Order.DoesNotExist:
-		return redirect('/?auth=payment_failed')
+		return redirect('payment_failed')
 
 	url = "https://api.paystack.co/transaction/initialize"
 	headers = {
@@ -184,20 +184,21 @@ def initialize_payment(request, order_id):
 	except Exception:
 		pass
 
-	return redirect('/?auth=payment_failed')
+	return redirect('payment_failed')
 
 
 def verify_payment(request):
 	reference = request.GET.get("reference")
 
 	if not reference:
-		return redirect('/?auth=payment_failed')
+		return redirect('payment_failed')
 
 	try:
 		order = Order.objects.get(reference=reference)
 	except Order.DoesNotExist:
-		return redirect('/?auth=payment_failed')
+		return redirect('payment_failed')
 
+	# ✅ Prevent duplicate transactions
 	if order.paid:
 		return redirect('payment_success')
 
@@ -210,19 +211,27 @@ def verify_payment(request):
 		response = requests.get(url, headers=headers)
 		res_data = response.json()
 
-		if res_data.get("status"):
-			data = res_data["data"]
+		if not res_data.get("status"):
+			return redirect('payment_failed')
 
-			if data["status"] == "success":
-				order.paid = True
-				order.payment_date = timezone.now()
-				order.save()
+		data = res_data.get("data", {})
 
-				return redirect('payment_success')
+		# ✅ STRICT validation
+		if (
+			data.get("status") == "success"
+			and data.get("amount") == int(order.amount_paid * 100)
+			and data.get("currency") == "NGN"
+		):
+			order.paid = True
+			order.payment_date = timezone.now()
+			order.save()
+
+			return redirect('payment_success')
+
 	except Exception:
 		pass
 
-	return redirect('/?auth=payment_failed')
+	return redirect('payment_failed')
 
 
 def paystack_webhook(request):
@@ -248,6 +257,7 @@ def paystack_webhook(request):
 		try:
 			order = Order.objects.get(reference=reference)
 
+			# ✅ Prevent duplicate webhook processing
 			if not order.paid:
 				order.paid = True
 				order.payment_date = timezone.now()
@@ -257,6 +267,10 @@ def paystack_webhook(request):
 			pass
 
 	return HttpResponse(status=200)
+
+
+def payment_failed(request):
+	return render(request, "payment/payment_failed.html", {})
 
 
 def billing_info(request):
