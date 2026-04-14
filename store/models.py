@@ -61,7 +61,7 @@ class Product(models.Model):
 	price = models.DecimalField(default=0, decimal_places=2, max_digits=8)
 	category = models.ForeignKey(Category, on_delete=models.CASCADE, default=1)
 	description = models.CharField(max_length=500, default='', blank=True, null=True)
-	image = CloudinaryField('image')
+	image = CloudinaryField('image', blank=True, null=True)
 	# Add sales stuff
 	is_sale = models.BooleanField(default=False)
 	sales_price = models.DecimalField(default=0, decimal_places=2, max_digits=8)

@@ -8,6 +8,11 @@ import datetime
 import requests
 from django.conf import settings
 from django.utils import timezone
+import uuid
+import hmac
+import hashlib
+import json
+from django.http import HttpResponse
 
 
 # Create your views here.
@@ -83,6 +88,8 @@ def process_order(request):
 		shipping_address = f"{my_shipping['shipping_address1']}\n{my_shipping['shipping_address2']}\n{my_shipping['shipping_city']}\n{my_shipping['shipping_state']}\n{my_shipping['shipping_country']}"
 		amount_paid = totals
 
+		reference = str(uuid.uuid4())  # ✅ ALWAYS generate reference
+
 		if request.user.is_authenticated:
 			user = request.user
 			create_order = Order.objects.create(
@@ -90,7 +97,8 @@ def process_order(request):
 				full_name=full_name,
 				email=email,
 				shipping_address=shipping_address,
-				amount_paid=amount_paid
+				amount_paid=amount_paid,
+				reference=reference
 			)
 
 			order_id = create_order.pk
@@ -121,7 +129,8 @@ def process_order(request):
 				full_name=full_name,
 				email=email,
 				shipping_address=shipping_address,
-				amount_paid=amount_paid
+				amount_paid=amount_paid,
+				reference=reference
 			)
 
 			order_id = create_order.pk
@@ -189,7 +198,6 @@ def verify_payment(request):
 	except Order.DoesNotExist:
 		return redirect('/?auth=payment_failed')
 
-	# Prevent double processing
 	if order.paid:
 		return redirect('payment_success')
 
@@ -217,45 +225,38 @@ def verify_payment(request):
 	return redirect('/?auth=payment_failed')
 
 
-
 def paystack_webhook(request):
-    secret_key = settings.PAYSTACK_SECRET_KEY
+	secret_key = settings.PAYSTACK_SECRET_KEY
 
-    # Verify Paystack signature
-    hash = hmac.new(
-        secret_key.encode('utf-8'),
-        request.body,
-        hashlib.sha512
-    ).hexdigest()
+	hash = hmac.new(
+		secret_key.encode('utf-8'),
+		request.body,
+		hashlib.sha512
+	).hexdigest()
 
-    paystack_signature = request.headers.get('x-paystack-signature')
+	paystack_signature = request.headers.get('x-paystack-signature')
 
-    if hash != paystack_signature:
-        return HttpResponse(status=400)
+	if hash != paystack_signature:
+		return HttpResponse(status=400)
 
-    # Load payload
-    payload = json.loads(request.body)
+	payload = json.loads(request.body)
 
-    # Handle successful payment
-    if payload["event"] == "charge.success":
-        data = payload["data"]
-        reference = data["reference"]
+	if payload["event"] == "charge.success":
+		data = payload["data"]
+		reference = data["reference"]
 
-        try:
-            order = Order.objects.get(reference=reference)
+		try:
+			order = Order.objects.get(reference=reference)
 
-            # Prevent double processing
-            if not order.paid:
-                order.paid = True
-                order.payment_date = timezone.now()
-                order.save()
+			if not order.paid:
+				order.paid = True
+				order.payment_date = timezone.now()
+				order.save()
 
-        except Order.DoesNotExist:
-            pass
+		except Order.DoesNotExist:
+			pass
 
-    return HttpResponse(status=200)
-
-
+	return HttpResponse(status=200)
 
 
 def billing_info(request):
