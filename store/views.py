@@ -11,6 +11,7 @@ from django import forms
 from django.db.models import Q 
 import json
 from cart.cart import Cart
+from django.core.paginator import Paginator
 
 
 # Create your views here.
@@ -120,8 +121,16 @@ def product(request, pk):
 
 
 def home(request):
-	products = Product.objects.all()
-	return render(request, 'home.html', {'products':products})
+    product_list = Product.objects.all().order_by('-id')
+
+    paginator = Paginator(product_list, 8)  # number of products per page
+
+    page_number = request.GET.get('page')
+    products = paginator.get_page(page_number)
+
+    return render(request, 'home.html', {
+        'products': products
+    })
 
 def about(request):
 	return render(request, 'about.html', {})

@@ -1,127 +1,160 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
 {% block content %}
 
-        <!-- Header-->
-        <header class="bg-dark py-5 gradient-background">
-            <div class="container px-4 px-lg-5 my-5">
-                <div class="text-center text-white">
-                    <h1 class="display-4 fw-bolder">Shop in style</h1>
-                    <p class="lead fw-normal text-white-100 mb-0">We believe perfume should last - not just on your skin, but in your memory. Our scents are crafted to leave an impression, built on trust, and priced with honesty.</p>
-                </div>
-            </div>
-        </header>
+<!-- Header-->
+<header class="bg-dark py-5 gradient-background">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Shop in style</h1>
+            <p class="lead fw-normal text-white-100 mb-0">
+                We believe perfume should last - not just on your skin, but in your memory.
+                Our scents are crafted to leave an impression, built on trust, and priced with honesty.
+            </p>
+        </div>
+    </div>
+</header>
 
-        <!-- Section-->
-        <section class="py-5">
-            <div class="container px-4 px-lg-5 mt-5">
-                <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
-                    
+<!-- Section-->
+<section class="py-5">
+    <div class="container px-4 px-lg-5 mt-5">
 
-                    {% for product in products %}
-                        {% if product.is_sale %}
-                        <div class="col mb-5">
-                            <div class="card h-100">
+        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
 
-                                <!-- Sale badge-->
-                                <div class="badge bg-dark text-white position-absolute" style="top: 0.5rem; right: 0.5rem">Sale</div>
+            {% for product in products %}
+                {% if product.is_sale %}
+                <div class="col mb-5">
+                    <div class="card h-100">
 
-                                <!-- Product image -->
-                                {% if product.image %}
-                                <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}" />
-                                {% else %}
-                                <img class="card-img-top" src="{% static 'assets/image/photo1.jpg' %}" alt="No image" />
-                                {% endif %}
+                        <div class="badge bg-dark text-white position-absolute" style="top: 0.5rem; right: 0.5rem">Sale</div>
 
-                                <!-- Product details-->
-                                <div class="card-body p-4">
-                                    <div class="text-center">
-
-                                        <h5 class="fw-bolder">{{ product.name }}</h5>
-                                        <br>
-
-                                        <!-- Rating -->
-                                        <div class="text-warning mb-3">
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star text-muted"></i>
-                                            <i class="bi bi-star text-muted"></i>
-                                        </div>
-
-                                        <!-- Product price-->
-                                        <strike style="margin-right: 6px;">
-                                            ₦{{ product.price }}
-                                        </strike>
-                                        ₦{{ product.sales_price }}
-                                        <br/>
-                                        {{ product.category }}
-                                    </div>
-                                </div>
-
-                                <!-- Product actions-->
-                                <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                                    <div class="text-center">
-                                        <a class="btn btn-outline-dark mt-auto" href="{% url 'product' product.id %}">
-                                            View Product
-                                        </a>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
+                        {% if product.image %}
+                        <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}" />
                         {% else %}
-                        <div class="col mb-5">
-                            <div class="card h-100">
+                        <img class="card-img-top" src="{% static 'assets/image/photo1.jpg' %}" alt="No image" />
+                        {% endif %}
 
-                                <!-- Product image -->
-                                {% if product.image %}
-                                <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}" />
-                                {% else %}
-                                <img class="card-img-top" src="{% static 'images/default.jpg' %}" alt="No image" />
-                                {% endif %}
+                        <div class="card-body p-4">
+                            <div class="text-center">
 
-                                <!-- Product details-->
-                                <div class="card-body p-4">
-                                    <div class="text-center">
+                                <h5 class="fw-bolder">{{ product.name }}</h5>
+                                <br>
 
-                                        <h5 class="fw-bolder">{{ product.name }}</h5>
-                                        <br>
-
-                                        <!-- Rating -->
-                                        <div class="text-warning mb-3">
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star-fill"></i>
-                                            <i class="bi bi-star text-muted"></i>
-                                        </div>
-
-                                        <!-- Product price-->
-                                        ₦{{ product.price }}
-                                        <br/>
-                                        {{ product.category }}
-                                    </div>
+                                <div class="text-warning mb-3">
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star text-muted"></i>
+                                    <i class="bi bi-star text-muted"></i>
                                 </div>
 
-                                <!-- Product actions-->
-                                <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                                    <div class="text-center">
-                                        <a class="btn btn-outline-dark mt-auto" href="{% url 'product' product.id %}">
-                                            View Product
-                                        </a>
-                                    </div>
-                                </div>
+                                <strike style="margin-right: 6px;">
+                                    ₦{{ product.price }}
+                                </strike>
+                                ₦{{ product.sales_price }}
+                                <br/>
+                                {{ product.category }}
 
                             </div>
                         </div>
-                        {% endif %}
-                    {% endfor %}
 
+                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                            <div class="text-center">
+                                <a class="btn btn-outline-dark mt-auto" href="{% url 'product' product.id %}">
+                                    View Product
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-            </div>
-        </section>
-  
+                {% else %}
+                <div class="col mb-5">
+                    <div class="card h-100">
+
+                        {% if product.image %}
+                        <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}" />
+                        {% else %}
+                        <img class="card-img-top" src="{% static 'images/default.jpg' %}" alt="No image" />
+                        {% endif %}
+
+                        <div class="card-body p-4">
+                            <div class="text-center">
+
+                                <h5 class="fw-bolder">{{ product.name }}</h5>
+                                <br>
+
+                                <div class="text-warning mb-3">
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star-fill"></i>
+                                    <i class="bi bi-star text-muted"></i>
+                                </div>
+
+                                ₦{{ product.price }}
+                                <br/>
+                                {{ product.category }}
+
+                            </div>
+                        </div>
+
+                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                            <div class="text-center">
+                                <a class="btn btn-outline-dark mt-auto" href="{% url 'product' product.id %}">
+                                    View Product
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+
+        </div>
+
+        <!-- ✅ Pagination (CORRECT POSITION) -->
+        <nav aria-label="Page navigation example" class="mt-4">
+            <ul class="pagination justify-content-center">
+
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.previous_page_number }}">&laquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+                {% endif %}
+
+                {% for num in products.paginator.page_range %}
+                    {% if products.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.next_page_number }}">&raquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                {% endif %}
+
+            </ul>
+        </nav>
+
+    </div>
+</section>
+
 {% endblock %}
